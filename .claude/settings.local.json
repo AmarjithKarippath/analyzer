@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(lsof -iTCP:3000 -sTCP:LISTEN -nP)",
+      "Bash(lsof -iTCP:8000 -sTCP:LISTEN -nP)",
+      "Bash(curl -s http://localhost:3000/ -o /tmp/index.html -w \"HTTP %{http_code}\\\\n\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:3000/components/TradeCalendar.jsx -w \"\\\\nHTTP %{http_code}\\\\n\" -o /tmp/tc.txt)",
+      "Bash(curl -s \"http://localhost:3000/components/TradeCalendar.jsx?t=$\\(date +%s\\)\" -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(docker compose *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

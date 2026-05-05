@@ -1,0 +1,105 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import FileUpload from './components/FileUpload';
+import Dashboard from './components/Dashboard';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorAlert from './components/ErrorAlert';
+import './App.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [fileLoaded, setFileLoaded] = useState(false);
+  const [stats, setStats] = useState(null);
+  const [summary, setSummary] = useState(null);
+
+  // Configure axios
+  useEffect(() => {
+    axios.defaults.baseURL = API_BASE_URL;
+  }, []);
+
+  const handleFileUpload = async (file) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axios.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Upload successful:', response.data);
+
+      // Fetch statistics after upload
+      await fetchStatistics();
+      setFileLoaded(true);
+    } catch (err) {
+      setError({
+        title: 'Upload Failed',
+        message: err.response?.data?.detail || 'Failed to upload file. Please try again.',
+      });
+      console.error('Upload error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchStatistics = async () => {
+    try {
+      const [statsRes, summaryRes] = await Promise.all([
+        axios.get('/statistics'),
+        axios.get('/summary'),
+      ]);
+
+      setStats(statsRes.data);
+      setSummary(summaryRes.data);
+    } catch (err) {
+      setError({
+        title: 'Failed to Load Data',
+        message: 'Could not fetch statistics. Please try uploading the file again.',
+      });
+      console.error('Fetch error:', err);
+    }
+  };
+
+  const handleNewFile = () => {
+    setFileLoaded(false);
+    setStats(null);
+    setSummary(null);
+    setError(null);
+  };
+
+  return (
+    <div className="app">
+      {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
+
+      {!fileLoaded ? (
+        <div className="upload-container">
+          <div className="upload-wrapper">
+            <div className="upload-header">
+              <h1>P&L Report Dashboard</h1>
+              <p>Upload your trading P&L CSV file to get started</p>
+            </div>
+            <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} />
+            {isLoading && <LoadingSpinner message="Processing your file..." />}
+          </div>
+        </div>
+      ) : (
+        <Dashboard
+          stats={stats}
+          summary={summary}
+          onNewFile={handleNewFile}
+          isLoading={isLoading}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
