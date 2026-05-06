@@ -151,22 +151,29 @@ def create_local_user(email: str, password: str, name: Optional[str] = None) -> 
     return get_user_by_id(user_id)
 
 
-def upsert_google_user(sub, email, name) -> sqlite3.Row:
+def upsert_google_user(sub: str, email: str, name: Optional[str]) -> sqlite3.Row:
+    """Create or update a Google-authenticated user. Also link google_sub to existing local account if email matches."""
     email = email.lower().strip()
     existing = get_user_by_google_sub(sub) or get_user_by_email(email)
-    with _db_lock, _connect() as conn:           # ← acquires _db_lock
+    with _db_lock, _connect() as conn:
         if existing is None:
-            cur = conn.execute("INSERT INTO users …")
+            # New user: insert
+            cur = conn.execute(
+                "INSERT INTO users (email, name, google_sub, provider, created_at) VALUES (?, ?, ?, 'google', ?)",
+                (email, name, sub, int(time.time())),
+            )
             conn.commit()
-            return get_user_by_id(cur.lastrowid) # ← ALSO calls _db_lock acquire — deadlock!
-        conn.execute("UPDATE users …")
-        conn.commit()
-        return get_user_by_id(existing["id"])    # ← same deadlock on the existing-user path
-
-# def upsert_google_user(sub: str, email: str, name: Optional[str]) -> sqlite3.Row:
-#     email = email.lower().strip()
-#     existing = get_user_by_google_sub(sub) or get_user_by_email(email)
-#     with _db_lock, _connect() as conn:
+            user_id = cur.lastrowid
+        else:
+            # Existing user: link google_sub (if not already linked) and update name
+            conn.execute(
+                "UPDATE users SET google_sub = COALESCE(google_sub, ?), name = COALESCE(?, name) WHERE id = ?",
+                (sub, name, existing["id"]),
+            )
+            conn.commit()
+            user_id = existing["id"]
+    # Release lock before the final query to avoid re-entrancy issues
+    return get_user_by_id(user_id)
 #         if existing is None:
 #             cur = conn.execute(
 #                 "INSERT INTO users (email, name, google_sub, provider, created_at) VALUES (?, ?, ?, 'google', ?)",
