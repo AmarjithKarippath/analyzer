@@ -1,6 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+import os
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr, Field
 import pandas as pd
 import io
 from typing import Optional
@@ -9,23 +11,46 @@ from collections import defaultdict
 import calendar as _calendar
 import json
 
-app = FastAPI(title="P&L Report API", version="1.0.0")
+import auth as auth_module
+from auth import (
+    init_db,
+    get_current_user,
+    create_local_user,
+    get_user_by_email,
+    verify_password,
+    create_jwt,
+    verify_google_id_token,
+    upsert_google_user,
+    user_to_dict,
+)
 
-# Add CORS middleware
+app = FastAPI(title="P&L Report API", version="1.1.0")
+
+CORS_ORIGINS = [o.strip() for o in os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:3001"
+).split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Global variable to store the processed dataframe
-processed_data = {
-    "df": None,
-    "pivot_df": None,
-    "file_loaded": False
-}
+
+@app.on_event("startup")
+async def _startup():
+    init_db()
+
+
+# Per-user in-memory data store: { user_id: {"df", "pivot_df", "file_loaded"} }
+user_sessions: dict[int, dict] = {}
+
+
+def get_session(user_id: int) -> dict:
+    return user_sessions.setdefault(user_id, {"df": None, "pivot_df": None, "file_loaded": False})
 
 
 RANGE_TO_DAYS = {
@@ -67,30 +92,81 @@ class PandasEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+# ---------- Auth schemas ----------
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6, max_length=128)
+    name: Optional[str] = None
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class GoogleIn(BaseModel):
+    credential: str  # Google ID token (JWT) from GIS / @react-oauth/google
+
+
+# ---------- Auth endpoints ----------
+@app.post("/auth/register")
+async def register(body: RegisterIn):
+    user = create_local_user(body.email, body.password, body.name)
+    token = create_jwt(user["id"], user["email"])
+    return {"token": token, "user": user_to_dict(user)}
+
+
+@app.post("/auth/login")
+async def login(body: LoginIn):
+    user = get_user_by_email(body.email)
+    if not user or not verify_password(body.password, user["password_hash"] or ""):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    token = create_jwt(user["id"], user["email"])
+    return {"token": token, "user": user_to_dict(user)}
+
+
+@app.post("/auth/google")
+async def login_with_google(body: GoogleIn):
+    info = verify_google_id_token(body.credential)
+    sub = info.get("sub")
+    email = info.get("email")
+    name = info.get("name") or info.get("given_name")
+    if not sub or not email:
+        raise HTTPException(status_code=401, detail="Google token missing sub/email")
+    if not info.get("email_verified", False):
+        raise HTTPException(status_code=401, detail="Google email not verified")
+    user = upsert_google_user(sub, email, name)
+    token = create_jwt(user["id"], user["email"])
+    return {"token": token, "user": user_to_dict(user)}
+
+
+@app.get("/auth/me")
+async def me(user=Depends(get_current_user)):
+    return {"user": user_to_dict(user)}
+
+
+# ---------- Data endpoints ----------
 @app.post("/upload")
-async def upload_csv(file: UploadFile = File(...)):
+async def upload_csv(file: UploadFile = File(...), user=Depends(get_current_user)):
     """
     Upload and process CSV file
     """
     try:
-        # Read the uploaded file
         contents = await file.read()
         df = pd.read_csv(io.BytesIO(contents), sep=',')
 
-        # Convert 'Buy Date' to datetime objects
         df['Buy Date'] = pd.to_datetime(df['Buy Date'], format='%d %b %Y')
 
-        # Create pivot table with 'Buy Date' as index and sum of 'P&L Amt (₹)'
         pivot_df = df.pivot_table(
             index='Buy Date',
             values='P&L Amt (₹)',
             aggfunc='sum'
         )
 
-        # Store processed data globally
-        processed_data["df"] = df
-        processed_data["pivot_df"] = pivot_df
-        processed_data["file_loaded"] = True
+        session = get_session(user["id"])
+        session["df"] = df
+        session["pivot_df"] = pivot_df
+        session["file_loaded"] = True
 
         return {
             "status": "success",
@@ -106,14 +182,18 @@ async def upload_csv(file: UploadFile = File(...)):
 
 
 @app.get("/statistics")
-async def get_statistics(range_key: Optional[str] = Query("all", alias="range")):
+async def get_statistics(
+    range_key: Optional[str] = Query("all", alias="range"),
+    user=Depends(get_current_user),
+):
     """
     Get all calculated P&L statistics (all print data as JSON)
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = filter_df_by_range(processed_data["df"], range_key)
+    df = filter_df_by_range(session["df"], range_key)
     if len(df) == 0:
         return {
             "daily_metrics": {"profitable_days": 0, "loss_days": 0, "total_traded_days": 0,
@@ -176,14 +256,18 @@ async def get_statistics(range_key: Optional[str] = Query("all", alias="range"))
 
 
 @app.get("/pivot-data")
-async def get_pivot_data(range_key: Optional[str] = Query("all", alias="range")):
+async def get_pivot_data(
+    range_key: Optional[str] = Query("all", alias="range"),
+    user=Depends(get_current_user),
+):
     """
     Get pivot table data (for line plot visualization)
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = filter_df_by_range(processed_data["df"], range_key)
+    df = filter_df_by_range(session["df"], range_key)
     pivot_df = build_pivot(df) if len(df) else pd.DataFrame(columns=['P&L Amt (₹)'])
 
     # Convert to list of dictionaries
@@ -201,14 +285,19 @@ async def get_pivot_data(range_key: Optional[str] = Query("all", alias="range"))
 
 
 @app.get("/distribution-data")
-async def get_distribution_data(bins: int = 20, range_key: Optional[str] = Query("all", alias="range")):
+async def get_distribution_data(
+    bins: int = 20,
+    range_key: Optional[str] = Query("all", alias="range"),
+    user=Depends(get_current_user),
+):
     """
     Get histogram distribution data (daily P&L distribution)
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = filter_df_by_range(processed_data["df"], range_key)
+    df = filter_df_by_range(session["df"], range_key)
     if len(df) == 0:
         return {"total_records": 0, "bins": bins, "distribution": []}
     pivot_df = build_pivot(df)
@@ -239,14 +328,19 @@ async def get_distribution_data(bins: int = 20, range_key: Optional[str] = Query
 
 
 @app.get("/top-days")
-async def get_top_days(top_n: int = 5, range_key: Optional[str] = Query("all", alias="range")):
+async def get_top_days(
+    top_n: int = 5,
+    range_key: Optional[str] = Query("all", alias="range"),
+    user=Depends(get_current_user),
+):
     """
     Get top profitable and loss-making days
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = filter_df_by_range(processed_data["df"], range_key)
+    df = filter_df_by_range(session["df"], range_key)
     if len(df) == 0:
         return {"top_profitable_days": {"count": 0, "data": []},
                 "top_loss_days": {"count": 0, "data": []}}
@@ -283,16 +377,21 @@ async def get_top_days(top_n: int = 5, range_key: Optional[str] = Query("all", a
 
 
 @app.get("/calendar-data")
-async def get_calendar_data(months: int = 2, end_date: Optional[str] = None):
+async def get_calendar_data(
+    months: int = 2,
+    end_date: Optional[str] = None,
+    user=Depends(get_current_user),
+):
     """
     Get a daily calendar summary of trades for the last `months` months.
     Each day reports total P&L, trade count, and per-trade win rate.
     Also returns weekly aggregates and per-month meta for rendering a calendar grid.
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = processed_data["df"]
+    df = session["df"]
 
     if end_date:
         try:
@@ -417,14 +516,15 @@ async def get_calendar_data(months: int = 2, end_date: Optional[str] = None):
 
 
 @app.get("/raw-data")
-async def get_raw_data(limit: Optional[int] = 100):
+async def get_raw_data(limit: Optional[int] = 100, user=Depends(get_current_user)):
     """
     Get raw dataframe data (first N rows)
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = processed_data["df"]
+    df = session["df"]
 
     # Convert to list of dictionaries
     if limit:
@@ -440,15 +540,16 @@ async def get_raw_data(limit: Optional[int] = 100):
 
 
 @app.get("/summary")
-async def get_summary():
+async def get_summary(user=Depends(get_current_user)):
     """
     Get overall summary of loaded data
     """
-    if not processed_data["file_loaded"]:
+    session = get_session(user["id"])
+    if not session["file_loaded"]:
         raise HTTPException(status_code=400, detail="No data loaded. Please upload a CSV file first.")
 
-    df = processed_data["df"]
-    pivot_df = processed_data["pivot_df"]
+    df = session["df"]
+    pivot_df = session["pivot_df"]
 
     return {
         "file_status": "loaded",
@@ -475,11 +576,11 @@ async def get_summary():
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint
+    Health check endpoint (public)
     """
     return {
         "status": "healthy",
-        "data_loaded": processed_data["file_loaded"]
+        "active_sessions": len(user_sessions),
     }
 
 

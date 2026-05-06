@@ -14,11 +14,15 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py client.py ./
+COPY main.py client.py auth.py ./
 
-RUN useradd --create-home --shell /bin/bash app \
+RUN mkdir -p /app/data \
+    && useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app
+
+VOLUME ["/app/data"]
+ENV AUTH_DB_PATH=/app/data/users.db
 
 EXPOSE 8001
 

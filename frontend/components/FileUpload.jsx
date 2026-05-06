@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, File, AlertCircle } from 'lucide-react';
+import { Upload, File, AlertCircle, Download, ExternalLink } from 'lucide-react';
 import './FileUpload.css';
 
 function FileUpload({ onFileUpload, isLoading }) {
@@ -106,6 +106,34 @@ function FileUpload({ onFileUpload, isLoading }) {
             <li>Must contain "P&L Amt (₹)" column (numeric values)</li>
           </ul>
         </div>
+      </div>
+
+      <div className="sample-source">
+        <div className="sample-source-header">
+          <h4>Don't have a file?</h4>
+          <a
+            href="/sample_pnl_report.csv"
+            download="sample_pnl_report.csv"
+            className="sample-download-btn"
+          >
+            <Download size={16} />
+            Download sample CSV
+          </a>
+        </div>
+        <p className="sample-source-note">
+          This dashboard accepts the Tax P&amp;L report exported from Fyers:{' '}
+          <strong>My Account &rarr; Reports &rarr; Tax P&amp;L</strong>.
+          {' '}
+          <a
+            href="https://fyers.in/web/reports/pnl/tax-pnl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sample-source-link"
+          >
+            Open Fyers Tax P&amp;L
+            <ExternalLink size={12} />
+          </a>
+        </p>
       </div>
     </div>
   );

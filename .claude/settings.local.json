@@ -11,7 +11,12 @@
       "Bash(curl -s http://localhost:3001/components/TradeCalendar.jsx -w \"\\\\nHTTP %{http_code}\\\\n\" -o /tmp/tc.txt)",
       "Bash(curl -s \"http://localhost:3001/components/TradeCalendar.jsx?t=$\\(date +%s\\)\" -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
       "Bash(docker compose *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Read(//Users/amar/Documents/**)",
+      "Bash(curl -sI \"https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30011791.tgz\")",
+      "Bash(curl -sI \"https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001791.tgz\")",
+      "Bash(curl -s https://registry.npmjs.org/caniuse-lite)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('latest:', d['dist-tags']['latest']\\)\")"
     ]
   }
 }

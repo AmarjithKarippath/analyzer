@@ -1,6 +1,23 @@
+# --- Web framework ---------------------------------------------------------
 fastapi>=0.104.1
-uvicorn>=0.24.0
-pandas>=2.2.0
+uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
+
+# --- Data analysis ---------------------------------------------------------
+pandas>=2.2.0
+numpy>=1.26.0
 matplotlib>=3.8.2
 seaborn>=0.13.0
+
+# --- Authentication --------------------------------------------------------
+bcrypt>=4.1.0
+PyJWT[crypto]>=2.8.0
+email-validator>=2.1.0
+
+# --- Google Sign-In (ID token verification) --------------------------------
+# google-auth uses google.auth.transport.requests, which requires the
+# stand-alone `requests` HTTP client — it is NOT a hard dependency of
+# google-auth, so it must be listed explicitly.
+google-auth>=2.27.0
+requests>=2.31.0
+cachecontrol>=0.13.1

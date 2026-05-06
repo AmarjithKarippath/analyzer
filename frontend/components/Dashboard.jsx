@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, RefreshCw, Calendar } from 'lucide-react';
+import { Plus, RefreshCw, Calendar, LogOut } from 'lucide-react';
 import StatisticsCards from './StatisticsCards';
 import Charts from './Charts';
 import TopDaysTable from './TopDaysTable';
@@ -15,7 +15,7 @@ const RANGE_OPTIONS = [
   { value: 'all', label: 'All time' },
 ];
 
-function Dashboard({ stats, summary, onNewFile, isLoading }) {
+function Dashboard({ stats, summary, onNewFile, isLoading, user, onLogout }) {
   const [range, setRange] = useState('all');
   const [currentStats, setCurrentStats] = useState(stats);
   const [topDays, setTopDays] = useState(null);
@@ -90,6 +90,7 @@ function Dashboard({ stats, summary, onNewFile, isLoading }) {
           <div className="header-title">
             <h1>P&L Dashboard</h1>
             <p>
+              {user ? <>Signed in as <strong>{user.name || user.email}</strong> · </> : null}
               Data from {summary.date_range.start} to {summary.date_range.end}
             </p>
           </div>
@@ -124,6 +125,16 @@ function Dashboard({ stats, summary, onNewFile, isLoading }) {
               <Plus size={18} />
               New File
             </button>
+            {onLogout && (
+              <button
+                className="btn btn-secondary"
+                onClick={onLogout}
+                title="Sign out"
+              >
+                <LogOut size={18} />
+                Sign out
+              </button>
+            )}
           </div>
         </div>
       </header>

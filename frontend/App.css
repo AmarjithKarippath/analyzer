@@ -74,6 +74,55 @@ body {
   margin-bottom: 40px;
 }
 
+.upload-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  text-align: left;
+}
+
+.upload-header-row > div:first-child {
+  text-align: center;
+  flex: 1;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 6px 6px 6px 14px;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.user-chip-name {
+  font-weight: 500;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-chip-btn {
+  border: none;
+  background: white;
+  color: #4f46e5;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.user-chip-btn:hover {
+  background: #eef2ff;
+}
+
 .upload-header h1 {
   font-size: 32px;
   font-weight: 700;

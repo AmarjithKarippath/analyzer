@@ -6,6 +6,13 @@ services:
       - "8001"
     environment:
       - PYTHONUNBUFFERED=1
+      - JWT_SECRET=${JWT_SECRET:-please-change-me}
+      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS:-168}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001,http://localhost:3000}
+      - AUTH_DB_PATH=/app/data/users.db
+    volumes:
+      - auth_data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8001/health"]
@@ -21,6 +28,7 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     container_name: trade-analyzer-frontend
     ports:
       - "${FRONTEND_PORT:-3001}:80"
@@ -36,6 +44,9 @@ services:
       start_period: 10s
     networks:
       - app-net
+
+volumes:
+  auth_data:
 
 networks:
   app-net:
