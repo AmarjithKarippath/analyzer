@@ -46,6 +46,25 @@ services:
     networks:
       - app-net
 
+  console:
+    build:
+      context: ./console
+    container_name: trade-analyzer-console
+    ports:
+      - "${CONSOLE_PORT:-3002}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app-net
+
 volumes:
   auth_data:
 
