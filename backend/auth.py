@@ -52,7 +52,11 @@ class _TimeoutGoogleRequest(google_requests.Request):
 
 _google_request_transport = _TimeoutGoogleRequest()
 
-_db_lock = threading.Lock()
+# RLock (re-entrant) instead of Lock: several helpers (get_user_by_id, get_user_by_email)
+# acquire this lock, and they may be called from inside another locked section
+# (e.g. upsert_google_user → get_user_by_id). With a non-reentrant Lock this deadlocks
+# the worker thread, which manifests as a 504 from nginx after the proxy_read_timeout.
+_db_lock = threading.RLock()
 
 
 def _connect():
@@ -147,24 +151,36 @@ def create_local_user(email: str, password: str, name: Optional[str] = None) -> 
     return get_user_by_id(user_id)
 
 
-def upsert_google_user(sub: str, email: str, name: Optional[str]) -> sqlite3.Row:
+def upsert_google_user(sub, email, name) -> sqlite3.Row:
     email = email.lower().strip()
     existing = get_user_by_google_sub(sub) or get_user_by_email(email)
-    with _db_lock, _connect() as conn:
+    with _db_lock, _connect() as conn:           # ← acquires _db_lock
         if existing is None:
-            cur = conn.execute(
-                "INSERT INTO users (email, name, google_sub, provider, created_at) VALUES (?, ?, ?, 'google', ?)",
-                (email, name, sub, int(time.time())),
-            )
+            cur = conn.execute("INSERT INTO users …")
             conn.commit()
-            return get_user_by_id(cur.lastrowid)
-        # Link google_sub to an existing local account or update name
-        conn.execute(
-            "UPDATE users SET google_sub = COALESCE(google_sub, ?), name = COALESCE(?, name) WHERE id = ?",
-            (sub, name, existing["id"]),
-        )
+            return get_user_by_id(cur.lastrowid) # ← ALSO calls _db_lock acquire — deadlock!
+        conn.execute("UPDATE users …")
         conn.commit()
-        return get_user_by_id(existing["id"])
+        return get_user_by_id(existing["id"])    # ← same deadlock on the existing-user path
+
+# def upsert_google_user(sub: str, email: str, name: Optional[str]) -> sqlite3.Row:
+#     email = email.lower().strip()
+#     existing = get_user_by_google_sub(sub) or get_user_by_email(email)
+#     with _db_lock, _connect() as conn:
+#         if existing is None:
+#             cur = conn.execute(
+#                 "INSERT INTO users (email, name, google_sub, provider, created_at) VALUES (?, ?, ?, 'google', ?)",
+#                 (email, name, sub, int(time.time())),
+#             )
+#             conn.commit()
+#             return get_user_by_id(cur.lastrowid)
+#         # Link google_sub to an existing local account or update name
+#         conn.execute(
+#             "UPDATE users SET google_sub = COALESCE(google_sub, ?), name = COALESCE(?, name) WHERE id = ?",
+#             (sub, name, existing["id"]),
+#         )
+#         conn.commit()
+#         return get_user_by_id(existing["id"])
 
 
 def _peek_unverified_claims(token: str) -> dict:
