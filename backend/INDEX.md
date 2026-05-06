@@ -42,7 +42,7 @@ The core FastAPI application with all endpoints.
 **Usage:**
 ```bash
 python main.py
-# API runs on http://localhost:8000
+# API runs on http://localhost:8001
 ```
 
 ---
@@ -120,13 +120,13 @@ Docker container configuration.
 **Features:**
 - Python 3.11 slim image
 - All dependencies included
-- Port 8000 exposed
+- Port 8001 exposed
 - Ready for production deployment
 
 **Build & Run:**
 ```bash
 docker build -t pnl-api .
-docker run -p 8000:8000 pnl-api
+docker run -p 8001:8001 pnl-api
 ```
 
 ---
@@ -247,7 +247,7 @@ Navigation and file structure reference.
 
 #### Understand All Endpoints
 1. Read: `README.md`
-2. Visit: `http://localhost:8000/docs`
+2. Visit: `http://localhost:8001/docs`
 
 #### Learn by Examples
 1. Read: `USAGE_GUIDE.md`
@@ -266,7 +266,7 @@ Navigation and file structure reference.
 #### Troubleshoot Issues
 1. Read: `QUICKSTART.md` - Troubleshooting section
 2. Read: `USAGE_GUIDE.md` - Troubleshooting section
-3. Check: `http://localhost:8000/health`
+3. Check: `http://localhost:8001/health`
 
 ---
 
@@ -311,11 +311,11 @@ client.print_top_days(5)
 ### Workflow 2: Web API Integration
 ```bash
 # Upload
-curl -X POST http://localhost:8000/upload -F "file=@data.csv"
+curl -X POST http://localhost:8001/upload -F "file=@data.csv"
 
 # Get data
-curl http://localhost:8000/statistics | jq .
-curl http://localhost:8000/pivot-data | jq .
+curl http://localhost:8001/statistics | jq .
+curl http://localhost:8001/pivot-data | jq .
 ```
 
 ### Workflow 3: Docker Deployment
@@ -324,7 +324,7 @@ curl http://localhost:8000/pivot-data | jq .
 docker build -t pnl-api .
 
 # Run
-docker run -p 8000:8000 pnl-api
+docker run -p 8001:8001 pnl-api
 
 # Or with compose
 docker-compose up -d
@@ -376,7 +376,7 @@ See `ADVANCED_FEATURES.md` → JWT Authentication section
 - [ ] Run: `pip install -r requirements.txt`
 - [ ] Prepare CSV file with correct column names
 - [ ] Run: `python main.py`
-- [ ] Test: `http://localhost:8000/docs`
+- [ ] Test: `http://localhost:8001/docs`
 - [ ] Upload file via API
 - [ ] Read: `QUICKSTART.md`
 - [ ] Try examples from `USAGE_GUIDE.md`
@@ -387,9 +387,9 @@ See `ADVANCED_FEATURES.md` → JWT Authentication section
 ## 📞 Support & Resources
 
 ### Built-in Documentation
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **Health Check**: http://localhost:8000/health
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
+- **Health Check**: http://localhost:8001/health
 
 ### Documentation Files
 1. **Quick Start**: `QUICKSTART.md`

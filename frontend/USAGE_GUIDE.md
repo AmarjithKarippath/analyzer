@@ -12,13 +12,13 @@ pip install -r requirements.txt
 python main.py
 ```
 
-The API will be available at `http://localhost:8000`
+The API will be available at `http://localhost:8001`
 
 ### 2. Interactive API Documentation
 
 Open your browser and go to:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
 
 ## Using the API
 
@@ -54,33 +54,33 @@ client.print_top_days(top_n=5)
 
 ```bash
 # Upload a CSV file
-curl -X POST http://localhost:8000/upload \
+curl -X POST http://localhost:8001/upload \
   -H "accept: application/json" \
   -F "file=@pnl_report_v2.csv"
 
 # Get statistics
-curl -X GET http://localhost:8000/statistics
+curl -X GET http://localhost:8001/statistics
 
 # Get pivot data
-curl -X GET http://localhost:8000/pivot-data
+curl -X GET http://localhost:8001/pivot-data
 
 # Get distribution
-curl -X GET "http://localhost:8000/distribution-data?bins=30"
+curl -X GET "http://localhost:8001/distribution-data?bins=30"
 
 # Get top days
-curl -X GET "http://localhost:8000/top-days?top_n=10"
+curl -X GET "http://localhost:8001/top-days?top_n=10"
 
 # Get summary
-curl -X GET http://localhost:8000/summary
+curl -X GET http://localhost:8001/summary
 
 # Health check
-curl -X GET http://localhost:8000/health
+curl -X GET http://localhost:8001/health
 ```
 
 ### Method 3: JavaScript/Node.js
 
 ```javascript
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'http://localhost:8001';
 
 // Helper function for API calls
 async function apiCall(endpoint, method = 'GET', data = null) {
@@ -138,7 +138,7 @@ const chart = new Chart(ctx, {
 import requests
 import pandas as pd
 
-BASE_URL = 'http://localhost:8000'
+BASE_URL = 'http://localhost:8001'
 
 # Upload file
 with open('pnl_report_v2.csv', 'rb') as f:
@@ -369,7 +369,7 @@ print("HTML report generated: pnl_report.html")
 docker build -t pnl-api .
 
 # Run the container
-docker run -p 8000:8000 pnl-api
+docker run -p 8001:8001 pnl-api
 
 # Or use docker-compose
 docker-compose up -d
@@ -381,7 +381,7 @@ If running other services in Docker:
 
 ```bash
 # Docker service name is 'pnl-api'
-curl http://pnl-api:8000/health
+curl http://pnl-api:8001/health
 ```
 
 ## Performance Tips
@@ -410,10 +410,10 @@ uvicorn main:app --port 8001
 
 ```bash
 # Check health
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Check if file is loaded
-curl http://localhost:8000/summary
+curl http://localhost:8001/summary
 ```
 
 ### Memory Issues with Large Files

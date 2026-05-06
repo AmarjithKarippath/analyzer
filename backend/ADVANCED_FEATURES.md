@@ -90,7 +90,7 @@ async def websocket_statistics(websocket: WebSocket):
 
 ```javascript
 // Real-time statistics updates
-const socket = new WebSocket('ws://localhost:8000/ws/statistics');
+const socket = new WebSocket('ws://localhost:8001/ws/statistics');
 
 socket.onmessage = (event) => {
     const stats = JSON.parse(event.data);
@@ -446,7 +446,7 @@ async def process_file_async(file_path: str):
 ### Deployment Command (Gunicorn)
 
 ```bash
-gunicorn -w 4 -b 0.0.0.0:8000 main:app
+gunicorn -w 4 -b 0.0.0.0:8001 main:app
 ```
 
 ## Performance Optimization Tips

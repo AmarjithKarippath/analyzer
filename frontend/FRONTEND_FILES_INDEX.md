@@ -74,7 +74,7 @@ frontend/
 
 **Includes:**
 - React plugin
-- Development server on port 3000
+- Development server on port 3001
 - Production build optimization
 - Console logging removed in production
 - Minification enabled
@@ -411,7 +411,7 @@ App.jsx
 
 4. **Open in browser:**
    ```
-   http://localhost:3000
+   http://localhost:3001
    ```
 
 ---

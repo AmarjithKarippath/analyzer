@@ -11,7 +11,7 @@ import json
 class PnLReportClient:
     """Client for P&L Report API"""
 
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8001"):
         """
         Initialize the client
 
@@ -204,7 +204,7 @@ class PnLReportClient:
 # Example usage
 if __name__ == "__main__":
     # Initialize client
-    client = PnLReportClient(base_url="http://localhost:8000")
+    client = PnLReportClient(base_url="http://localhost:8001")
 
     try:
         # Check health

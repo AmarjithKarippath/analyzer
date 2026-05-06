@@ -53,7 +53,7 @@ npm install
 ### 2. Start Development Server
 
 ```bash
-# Run development server on http://localhost:3000
+# Run development server on http://localhost:3001
 npm run dev
 ```
 
@@ -86,7 +86,7 @@ npm run preview
 
 ## 🔌 API Integration
 
-The frontend communicates with the FastAPI backend on `http://localhost:8000`.
+The frontend communicates with the FastAPI backend on `http://localhost:8001`.
 
 ### Endpoints Used
 
@@ -102,18 +102,18 @@ The frontend communicates with the FastAPI backend on `http://localhost:8000`.
 Edit `App.jsx` to change the API URL:
 
 ```jsx
-const API_BASE_URL = 'http://localhost:8000'; // Change this
+const API_BASE_URL = 'http://localhost:8001'; // Change this
 ```
 
 Or use environment variable:
 
 ```jsx
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 ```
 
 Create `.env` file:
 ```
-VITE_API_URL=http://your-api-url:8000
+VITE_API_URL=http://your-api-url:8001
 ```
 
 ## 🎨 Components Guide
@@ -203,7 +203,7 @@ All components adapt to screen size with appropriate adjustments to:
 ### Vite Configuration (`vite.config.js`)
 
 ```js
-- Port: 3000
+- Port: 3001
 - Host: localhost
 - Output: dist/
 - Minification: enabled
@@ -235,7 +235,7 @@ build: {
 // In vite.config.js
 server: {
   proxy: {
-    '/api': 'http://localhost:8000'
+    '/api': 'http://localhost:8001'
   }
 }
 ```
@@ -245,7 +245,7 @@ server: {
 Create `.env.local` for development:
 
 ```
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8001
 VITE_DEBUG=true
 ```
 
@@ -265,7 +265,7 @@ npm run dev -- --port 3001
 
 ### API Connection Issues
 
-1. Check if backend is running on `http://localhost:8000`
+1. Check if backend is running on `http://localhost:8001`
 2. Verify CORS is enabled on backend
 3. Check browser console for error messages
 4. Ensure backend and frontend are on same machine or CORS is configured

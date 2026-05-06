@@ -16,7 +16,7 @@ python main.py
 
 You should see:
 ```
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
 ```
 
 ## Step 3: Upload Your CSV File (1 minute)
@@ -32,7 +32,7 @@ print(result)
 
 Option B - Using cURL:
 ```bash
-curl -X POST http://localhost:8000/upload \
+curl -X POST http://localhost:8001/upload \
   -F "file=@pnl_report_v2.csv"
 ```
 
@@ -82,7 +82,7 @@ Profit Factor:              3.45
 
 Open in your browser:
 ```
-http://localhost:8000/docs
+http://localhost:8001/docs
 ```
 
 ## What's Next?
@@ -262,7 +262,7 @@ print(f"Worst: {worst_day['date']} (₹{worst_day['pnl_amount']:.2f})")
 client.upload_csv('pnl_report_v2.csv')
 ```
 
-### Problem: "Port 8000 already in use"
+### Problem: "Port 8001 already in use"
 **Solution:** Use a different port
 ```bash
 uvicorn main:app --port 8001
@@ -286,7 +286,7 @@ uvicorn main:app --port 8001
 docker build -t pnl-api .
 
 # Run
-docker run -p 8000:8000 pnl-api
+docker run -p 8001:8001 pnl-api
 
 # Or use docker-compose
 docker-compose up
@@ -302,9 +302,9 @@ docker-compose up
 
 ## Support
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-- Health Check: http://localhost:8000/health
+- Swagger UI: http://localhost:8001/docs
+- ReDoc: http://localhost:8001/redoc
+- Health Check: http://localhost:8001/health
 
 ## Tips
 
@@ -316,7 +316,7 @@ client = PnLReportClient()
 
 💡 **Tip 2:** Open Swagger UI for interactive testing
 ```
-http://localhost:8000/docs
+http://localhost:8001/docs
 ```
 
 💡 **Tip 3:** Export data for visualization

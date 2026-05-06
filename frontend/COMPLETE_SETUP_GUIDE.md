@@ -60,7 +60,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Backend runs on: `http://localhost:8000`
+Backend runs on: `http://localhost:8001`
 
 ### Step 2: Setup Frontend
 
@@ -77,11 +77,11 @@ npm install
 npm run dev
 ```
 
-Frontend runs on: `http://localhost:3000`
+Frontend runs on: `http://localhost:3001`
 
 ### Step 3: Use the Dashboard
 
-1. Open browser: `http://localhost:3000`
+1. Open browser: `http://localhost:3001`
 2. Upload your CSV file
 3. View analytics and statistics
 
@@ -106,13 +106,13 @@ services:
     build:
       context: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -121,9 +121,9 @@ services:
     build:
       context: ./frontend
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://localhost:8001
     depends_on:
       - backend
     networks:
@@ -151,9 +151,9 @@ docker-compose down
 ```
 
 Services available at:
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8000`
-- API Docs: `http://localhost:8000/docs`
+- Frontend: `http://localhost:3001`
+- Backend: `http://localhost:8001`
+- API Docs: `http://localhost:8001/docs`
 
 ---
 
@@ -167,7 +167,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Access at: `http://localhost:8000/docs`
+Access at: `http://localhost:8001/docs`
 
 ### Frontend Only (with external backend)
 
@@ -176,7 +176,7 @@ cd frontend
 
 # Update API URL
 # Edit src/App.jsx:
-# const API_BASE_URL = 'http://your-backend-url:8000';
+# const API_BASE_URL = 'http://your-backend-url:8001';
 
 npm install
 npm run dev
@@ -194,14 +194,14 @@ Edit `backend/main.py`:
 # Change host/port
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
 ```
 
 Or use environment variables:
 
 ```bash
 export API_HOST=0.0.0.0
-export API_PORT=8000
+export API_PORT=8001
 ```
 
 ### Frontend Configuration
@@ -211,7 +211,7 @@ Edit `frontend/vite.config.js`:
 ```js
 export default defineConfig({
   server: {
-    port: 3000,
+    port: 3001,
     host: 'localhost',
   },
 })
@@ -222,15 +222,15 @@ export default defineConfig({
 Edit `frontend/src/App.jsx`:
 
 ```jsx
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
 
 // Or use environment variable:
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001';
 ```
 
 Create `.env`:
 ```
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8001
 ```
 
 ---
@@ -241,20 +241,20 @@ VITE_API_URL=http://localhost:8000
 
 ```bash
 # Test API is running
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 
 # Expected response:
 # {"status":"healthy","data_loaded":false}
 
 # View API documentation
-# Visit: http://localhost:8000/docs
+# Visit: http://localhost:8001/docs
 ```
 
 ### Frontend Check
 
 ```bash
 # Frontend should open automatically
-# Visit: http://localhost:3000
+# Visit: http://localhost:3001
 
 # Check browser console for errors
 # Press F12 to open developer tools
@@ -262,7 +262,7 @@ curl http://localhost:8000/health
 
 ### Full Integration Test
 
-1. **Open dashboard**: `http://localhost:3000`
+1. **Open dashboard**: `http://localhost:3001`
 2. **Upload CSV file** with columns:
    - Buy Date (DD MM YY format)
    - P&L Amt (₹)
@@ -292,12 +292,12 @@ curl http://localhost:8000/health
 
 ### Backend Issues
 
-#### Port 8000 Already in Use
+#### Port 8001 Already in Use
 
 ```bash
-# Find process using port 8000
-lsof -i :8000  # macOS/Linux
-netstat -ano | findstr :8000  # Windows
+# Find process using port 8001
+lsof -i :8001  # macOS/Linux
+netstat -ano | findstr :8001  # Windows
 
 # Kill process
 kill -9 <PID>  # macOS/Linux
@@ -327,7 +327,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080"],
+    allow_origins=["http://localhost:3001", "http://localhost:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -348,7 +348,7 @@ rm -rf node_modules yarn.lock
 yarn install
 ```
 
-#### Port 3000 Already in Use
+#### Port 3001 Already in Use
 
 ```bash
 # Use different port
@@ -359,7 +359,7 @@ npm run dev -- --port 3001
 
 1. **Check backend is running**:
    ```bash
-   curl http://localhost:8000/health
+   curl http://localhost:8001/health
    ```
 
 2. **Check API URL in App.jsx**:
@@ -444,17 +444,17 @@ vercel --prod
 
 ```env
 API_HOST=0.0.0.0
-API_PORT=8000
+API_PORT=8001
 ENVIRONMENT=development
 DEBUG=True
-CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+CORS_ORIGINS=http://localhost:3001,http://localhost:8080
 DATABASE_URL=sqlite:///./pnl_data.db
 ```
 
 ### Frontend `.env`
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8001
 VITE_DEBUG=true
 ```
 
@@ -491,7 +491,7 @@ VITE_DEBUG=true
 
 ### Check These Resources First
 
-1. **API Documentation**: `http://localhost:8000/docs`
+1. **API Documentation**: `http://localhost:8001/docs`
 2. **Browser Console**: Press F12 to view errors
 3. **Backend Logs**: Check terminal where backend is running
 4. **Frontend Console**: Check React console for warnings
@@ -508,7 +508,7 @@ rm -rf node_modules dist __pycache__
 npm cache clean --force
 
 # Test API endpoint
-curl -X POST http://localhost:8000/upload -F "file=@data.csv"
+curl -X POST http://localhost:8001/upload -F "file=@data.csv"
 
 # Check open ports
 lsof -i -P -n  # macOS/Linux

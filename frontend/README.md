@@ -28,11 +28,11 @@ python main.py
 Or using uvicorn directly:
 
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-The API will be available at `http://localhost:8000`
-Interactive API docs at `http://localhost:8000/docs`
+The API will be available at `http://localhost:8001`
+Interactive API docs at `http://localhost:8001/docs`
 
 ## API Endpoints
 
@@ -41,7 +41,7 @@ Upload and process a CSV file.
 
 **Request:**
 ```bash
-curl -X POST "http://localhost:8000/upload" \
+curl -X POST "http://localhost:8001/upload" \
   -H "accept: application/json" \
   -F "file=@pnl_report_v2.csv"
 ```
@@ -66,7 +66,7 @@ Get all calculated P&L statistics (all print data from the original script).
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/statistics" \
+curl -X GET "http://localhost:8001/statistics" \
   -H "accept: application/json"
 ```
 
@@ -103,7 +103,7 @@ Get daily P&L pivot table data (for line plot visualization).
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/pivot-data" \
+curl -X GET "http://localhost:8001/pivot-data" \
   -H "accept: application/json"
 ```
 
@@ -135,7 +135,7 @@ Get histogram distribution data showing P&L amount frequency distribution.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/distribution-data?bins=20" \
+curl -X GET "http://localhost:8001/distribution-data?bins=20" \
   -H "accept: application/json"
 ```
 
@@ -174,7 +174,7 @@ Get top profitable and loss-making days.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/top-days?top_n=5" \
+curl -X GET "http://localhost:8001/top-days?top_n=5" \
   -H "accept: application/json"
 ```
 
@@ -241,7 +241,7 @@ Get raw dataframe records (first N rows).
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/raw-data?limit=10" \
+curl -X GET "http://localhost:8001/raw-data?limit=10" \
   -H "accept: application/json"
 ```
 
@@ -267,7 +267,7 @@ Get overall summary and metadata about loaded data.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/summary" \
+curl -X GET "http://localhost:8001/summary" \
   -H "accept: application/json"
 ```
 
@@ -301,7 +301,7 @@ Health check endpoint.
 
 **Request:**
 ```bash
-curl -X GET "http://localhost:8000/health" \
+curl -X GET "http://localhost:8001/health" \
   -H "accept: application/json"
 ```
 
@@ -321,7 +321,7 @@ curl -X GET "http://localhost:8000/health" \
 import requests
 import json
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 # 1. Upload CSV file
 with open('pnl_report_v2.csv', 'rb') as f:
