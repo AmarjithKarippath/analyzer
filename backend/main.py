@@ -178,38 +178,18 @@ async def me(user=Depends(get_current_user)):
     return {"user": user_to_dict(user)}
 
 
-# ---------- Admin endpoints ----------
-ADMIN_EMAILS = os.environ.get("ADMIN_EMAILS", "").strip()
-
-
-def _check_admin(user: dict) -> None:
-    """Verify the requesting user is in the admin email list. Raises 403 if not."""
-    if not ADMIN_EMAILS:
-        logger.warning("[admin] ADMIN_EMAILS env not configured — admin endpoints are open to anyone.")
-        return
-    admin_list = [e.strip().lower() for e in ADMIN_EMAILS.split(",") if e.strip()]
-    if user["email"].lower() not in admin_list:
-        logger.warning("[admin] unauthorized access attempt by %s (not in admin list)", user["email"])
-        raise HTTPException(
-            status_code=403,
-            detail="Access denied. You are not in the admin user list.",
-        )
-    logger.info("[admin] authorized access by %s", user["email"])
-
-
+# ---------- Admin endpoints (no authentication required) ----------
 @app.get("/admin/users/count")
-async def admin_users_count(user=Depends(get_current_user)):
-    """Admin endpoint: return total number of registered users."""
-    _check_admin(user)
+async def admin_users_count():
+    """Admin endpoint: return total number of registered users. No authentication required."""
     count = get_user_count()
     logger.info("[/admin/users/count] count=%d", count)
     return {"count": count}
 
 
 @app.get("/admin/users")
-async def admin_users_list(user=Depends(get_current_user)):
-    """Admin endpoint: return list of all registered users (excluding passwords)."""
-    _check_admin(user)
+async def admin_users_list():
+    """Admin endpoint: return list of all registered users (excluding passwords). No authentication required."""
     users = get_all_users()
     logger.info("[/admin/users] returning %d users", len(users))
     return {"users": users, "total": len(users)}
