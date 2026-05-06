@@ -92,12 +92,27 @@ function AuthPage() {
   };
 
   const handleGoogle = async (credentialResponse) => {
+    // eslint-disable-next-line no-console
+    console.log('[GSI debug] GoogleLogin onSuccess fired:', {
+      hasCredential: !!credentialResponse?.credential,
+      credentialLen: credentialResponse?.credential?.length || 0,
+      select_by: credentialResponse?.select_by,
+      clientId: credentialResponse?.clientId,
+    });
     setError(null);
     setSubmitting(true);
     try {
       await loginWithGoogle(credentialResponse.credential);
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Google sign-in failed');
+      const detail = err?.response?.data?.detail;
+      const status = err?.response?.status;
+      // eslint-disable-next-line no-console
+      console.error('[GSI debug] handleGoogle caught:', { status, detail, err });
+      setError(
+        detail
+          ? `${detail}${status ? ` (HTTP ${status})` : ''}`
+          : `Google sign-in failed${status ? ` (HTTP ${status})` : ''}`
+      );
     } finally {
       setSubmitting(false);
     }

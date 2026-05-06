@@ -11,6 +11,9 @@ from collections import defaultdict
 import calendar as _calendar
 import json
 
+import logging
+import traceback as _traceback
+
 import auth as auth_module
 from auth import (
     init_db,
@@ -22,7 +25,10 @@ from auth import (
     verify_google_id_token,
     upsert_google_user,
     user_to_dict,
+    probe_google_connectivity,
 )
+
+logger = logging.getLogger("api")
 
 app = FastAPI(title="P&L Report API", version="1.1.0")
 
@@ -43,6 +49,9 @@ app.add_middleware(
 @app.on_event("startup")
 async def _startup():
     init_db()
+    # One-shot connectivity check — surfaces "no outbound internet" / "missing env var"
+    # at startup instead of on the first user's Google sign-in attempt.
+    probe_google_connectivity()
 
 
 # Per-user in-memory data store: { user_id: {"df", "pivot_df", "file_loaded"} }
@@ -127,16 +136,38 @@ async def login(body: LoginIn):
 
 @app.post("/auth/google")
 async def login_with_google(body: GoogleIn):
-    info = verify_google_id_token(body.credential)
+    cred = body.credential or ""
+    logger.info("[/auth/google] called: credential length=%d", len(cred))
+    if not cred:
+        raise HTTPException(status_code=400, detail="Missing Google credential")
+
+    try:
+        info = verify_google_id_token(cred)
+    except HTTPException:
+        # Already logged inside verify_google_id_token
+        raise
+    except Exception as e:
+        logger.error("[/auth/google] unexpected error: %s\n%s", e, _traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Internal error: {e!r}")
+
     sub = info.get("sub")
     email = info.get("email")
     name = info.get("name") or info.get("given_name")
     if not sub or not email:
+        logger.error("[/auth/google] token missing sub/email; claims=%s", list(info.keys()))
         raise HTTPException(status_code=401, detail="Google token missing sub/email")
     if not info.get("email_verified", False):
+        logger.error("[/auth/google] email_verified=false for %s", email)
         raise HTTPException(status_code=401, detail="Google email not verified")
-    user = upsert_google_user(sub, email, name)
+
+    try:
+        user = upsert_google_user(sub, email, name)
+    except Exception as e:
+        logger.error("[/auth/google] upsert_google_user failed: %s\n%s", e, _traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"User upsert failed: {e!r}")
+
     token = create_jwt(user["id"], user["email"])
+    logger.info("[/auth/google] success: user_id=%s email=%s", user["id"], user["email"])
     return {"token": token, "user": user_to_dict(user)}
 
 

@@ -66,9 +66,32 @@ export function AuthProvider({ children }) {
   }, []);
 
   const loginWithGoogle = useCallback(async (credential) => {
-    const res = await axios.post('/auth/google', { credential });
-    persist(res.data.token, res.data.user);
-    return res.data.user;
+    const credLen = credential?.length || 0;
+    const url = `${axios.defaults.baseURL || ''}/auth/google`;
+    // eslint-disable-next-line no-console
+    console.log('[auth] loginWithGoogle → POST', url, '| credential length:', credLen);
+    if (!credential) {
+      // eslint-disable-next-line no-console
+      console.error('[auth] loginWithGoogle called with EMPTY credential — GoogleLogin onSuccess fired without one.');
+      throw new Error('Empty Google credential');
+    }
+    try {
+      const res = await axios.post('/auth/google', { credential });
+      // eslint-disable-next-line no-console
+      console.log('[auth] /auth/google OK:', { user: res.data?.user, tokenLen: res.data?.token?.length });
+      persist(res.data.token, res.data.user);
+      return res.data.user;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[auth] /auth/google FAILED:', {
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        data: err?.response?.data,
+        message: err?.message,
+        code: err?.code,
+      });
+      throw err;
+    }
   }, []);
 
   const logout = useCallback(() => {
