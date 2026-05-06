@@ -135,6 +135,23 @@ def get_user_by_google_sub(sub: str) -> Optional[sqlite3.Row]:
         return cur.fetchone()
 
 
+def get_user_count() -> int:
+    """Count total registered users."""
+    with _db_lock, _connect() as conn:
+        cur = conn.execute("SELECT COUNT(*) as count FROM users")
+        row = cur.fetchone()
+        return row["count"] if row else 0
+
+
+def get_all_users() -> list[dict]:
+    """Get all registered users (for admin). Returns list of user dicts (excluding passwords)."""
+    with _db_lock, _connect() as conn:
+        cur = conn.execute(
+            "SELECT id, email, name, provider, created_at FROM users ORDER BY created_at DESC"
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
 def create_local_user(email: str, password: str, name: Optional[str] = None) -> sqlite3.Row:
     email = email.lower().strip()
     pw_hash = hash_password(password)

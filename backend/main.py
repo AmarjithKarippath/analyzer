@@ -26,6 +26,8 @@ from auth import (
     upsert_google_user,
     user_to_dict,
     probe_google_connectivity,
+    get_user_count,
+    get_all_users,
 )
 
 logger = logging.getLogger("api")
@@ -34,7 +36,7 @@ app = FastAPI(title="P&L Report API", version="1.1.0")
 
 CORS_ORIGINS = [o.strip() for o in os.environ.get(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:3001"
+    "http://localhost:3000,http://localhost:3001,https://www.chilloutfox.com,https://console.chilloutfox.com"
 ).split(",") if o.strip()]
 
 app.add_middleware(
@@ -174,6 +176,43 @@ async def login_with_google(body: GoogleIn):
 @app.get("/auth/me")
 async def me(user=Depends(get_current_user)):
     return {"user": user_to_dict(user)}
+
+
+# ---------- Admin endpoints ----------
+ADMIN_EMAILS = os.environ.get("ADMIN_EMAILS", "").strip()
+
+
+def _check_admin(user: dict) -> None:
+    """Verify the requesting user is in the admin email list. Raises 403 if not."""
+    if not ADMIN_EMAILS:
+        logger.warning("[admin] ADMIN_EMAILS env not configured — admin endpoints are open to anyone.")
+        return
+    admin_list = [e.strip().lower() for e in ADMIN_EMAILS.split(",") if e.strip()]
+    if user["email"].lower() not in admin_list:
+        logger.warning("[admin] unauthorized access attempt by %s (not in admin list)", user["email"])
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. You are not in the admin user list.",
+        )
+    logger.info("[admin] authorized access by %s", user["email"])
+
+
+@app.get("/admin/users/count")
+async def admin_users_count(user=Depends(get_current_user)):
+    """Admin endpoint: return total number of registered users."""
+    _check_admin(user)
+    count = get_user_count()
+    logger.info("[/admin/users/count] count=%d", count)
+    return {"count": count}
+
+
+@app.get("/admin/users")
+async def admin_users_list(user=Depends(get_current_user)):
+    """Admin endpoint: return list of all registered users (excluding passwords)."""
+    _check_admin(user)
+    users = get_all_users()
+    logger.info("[/admin/users] returning %d users", len(users))
+    return {"users": users, "total": len(users)}
 
 
 # ---------- Data endpoints ----------
