@@ -17,13 +17,16 @@
       "Bash(curl -sI \"https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001791.tgz\")",
       "Bash(curl -s https://registry.npmjs.org/caniuse-lite)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('latest:', d['dist-tags']['latest']\\)\")",
-      "Bash(awk '{print $NF}')",
-      "Bash(grep -c \"blog\" main.py)",
-      "Bash(grep -i \"import.*blog\" main.py)",
+      "Bash(cp /Users/amar/Desktop/trade_analyzer/frontend/src/components/*.jsx /Users/amar/Desktop/trade_analyzer/frontend/components/)",
+      "Bash(cp /Users/amar/Desktop/trade_analyzer/frontend/src/hooks/*.js /Users/amar/Desktop/trade_analyzer/frontend/src/)",
+      "Bash(cp /Users/amar/Desktop/trade_analyzer/frontend/src/services/*.js /Users/amar/Desktop/trade_analyzer/frontend/src/)",
+      "Bash(mv components/*.jsx src/components/)",
+      "Bash(mv components/*.css src/components/)",
+      "Bash(mv context/*.jsx src/context/)",
+      "Bash(grep -E \"^-.*\\\\.\\(jsx|css\\)$\")",
+      "Bash(rm -rf dist node_modules/.vite)",
       "Bash(npm run *)",
-      "Bash(git check-ignore *)",
-      "Bash(git checkout *)",
-      "Bash(git push *)"
+      "Bash(grep -E \"^-.*\\\\.\\(jsx|js|css\\)$\")"
     ]
   }
 }
