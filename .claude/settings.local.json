@@ -22,7 +22,11 @@
       "Bash(cp /Users/amar/Desktop/trade_analyzer/frontend/src/services/*.js /Users/amar/Desktop/trade_analyzer/frontend/src/)",
       "Bash(mv components/*.jsx src/components/)",
       "Bash(mv components/*.css src/components/)",
-      "Bash(mv context/*.jsx src/context/)"
+      "Bash(mv context/*.jsx src/context/)",
+      "Bash(grep -E \"^-.*\\\\.\\(jsx|css\\)$\")",
+      "Bash(rm -rf dist node_modules/.vite)",
+      "Bash(npm run *)",
+      "Bash(grep -E \"^-.*\\\\.\\(jsx|js|css\\)$\")"
     ]
   }
 }
