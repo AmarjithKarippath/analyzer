@@ -1,12 +1,12 @@
 import os
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 import pandas as pd
 import io
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import defaultdict
 import calendar as _calendar
 import json
@@ -28,6 +28,18 @@ from auth import (
     probe_google_connectivity,
     get_user_count,
     get_all_users,
+)
+import blog as blog_module
+from blog import (
+    init_blog_db,
+    get_blog_posts,
+    get_blog_post_by_slug,
+    get_blog_post_by_id,
+    create_blog_post,
+    update_blog_post,
+    delete_blog_post,
+    search_blog_posts,
+    get_blog_post_count,
 )
 
 logger = logging.getLogger("api")
@@ -51,6 +63,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def _startup():
     init_db()
+    init_blog_db()
     # One-shot connectivity check — surfaces "no outbound internet" / "missing env var"
     # at startup instead of on the first user's Google sign-in attempt.
     probe_google_connectivity()
@@ -193,6 +206,121 @@ async def admin_users_list():
     users = get_all_users()
     logger.info("[/admin/users] returning %d users", len(users))
     return {"users": users, "total": len(users)}
+
+
+# ---------- Blog endpoints ----------
+class BlogPostIn(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(min_length=10)
+    excerpt: Optional[str] = None
+    published: bool = False
+
+
+class BlogPostUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    excerpt: Optional[str] = None
+    published: Optional[bool] = None
+
+
+@app.get("/blog/posts")
+async def list_blog_posts(skip: int = 0, limit: int = 10):
+    """Get published blog posts with pagination."""
+    posts = get_blog_posts(published_only=True, limit=limit, offset=skip)
+    total = get_blog_post_count(published_only=True)
+    logger.info("[/blog/posts] returned %d of %d posts", len(posts), total)
+    return {
+        "posts": posts,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
+
+
+@app.get("/blog/posts/{slug}")
+async def get_blog_post(slug: str):
+    """Get a single blog post by slug."""
+    post = get_blog_post_by_slug(slug)
+    if not post:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    logger.info("[/blog/posts/%s] retrieved", slug)
+    return {"post": post}
+
+
+@app.get("/blog/search")
+async def search_blog(q: str = Query(min_length=1)):
+    """Search blog posts by title or content."""
+    posts = search_blog_posts(q, limit=20)
+    logger.info("[/blog/search] found %d posts for '%s'", len(posts), q)
+    return {"posts": posts, "query": q}
+
+
+@app.post("/blog/admin/posts")
+async def create_blog_post_endpoint(body: BlogPostIn):
+    """Admin: Create a new blog post. No authentication required for now."""
+    try:
+        post = create_blog_post(
+            title=body.title,
+            content=body.content,
+            excerpt=body.excerpt,
+            author_name="Admin",
+            published=body.published,
+        )
+        logger.info("[/blog/admin/posts] created post_id=%d slug=%s", post["id"], post["slug"])
+        return {"post": post}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[/blog/admin/posts] creation failed: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to create post: {e}")
+
+
+@app.put("/blog/admin/posts/{post_id}")
+async def update_blog_post_endpoint(post_id: int, body: BlogPostUpdate):
+    """Admin: Update a blog post. No authentication required for now."""
+    try:
+        post = update_blog_post(
+            post_id=post_id,
+            title=body.title,
+            content=body.content,
+            excerpt=body.excerpt,
+            published=body.published,
+        )
+        logger.info("[/blog/admin/posts/%d] updated", post_id)
+        return {"post": post}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[/blog/admin/posts/%d] update failed: %s", post_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to update post: {e}")
+
+
+@app.delete("/blog/admin/posts/{post_id}")
+async def delete_blog_post_endpoint(post_id: int):
+    """Admin: Delete a blog post. No authentication required for now."""
+    try:
+        delete_blog_post(post_id)
+        logger.info("[/blog/admin/posts/%d] deleted", post_id)
+        return {"status": "deleted", "post_id": post_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[/blog/admin/posts/%d] deletion failed: %s", post_id, e)
+        raise HTTPException(status_code=500, detail=f"Failed to delete post: {e}")
+
+
+@app.get("/blog/admin/posts")
+async def list_blog_posts_admin(skip: int = 0, limit: int = 100):
+    """Admin: Get all blog posts (published and drafts). No authentication required for now."""
+    posts = get_blog_posts(published_only=False, limit=limit, offset=skip)
+    total = get_blog_post_count(published_only=False)
+    logger.info("[/blog/admin/posts] returned %d of %d posts (admin)", len(posts), total)
+    return {
+        "posts": posts,
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+    }
 
 
 # ---------- Data endpoints ----------
@@ -621,6 +749,37 @@ async def get_summary(user=Depends(get_current_user)):
             "/summary"
         ]
     }
+
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    """Generate XML sitemap for SEO. Public endpoint."""
+    posts = get_blog_posts(published_only=True, limit=1000, offset=0)
+
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+
+    # Add blog list
+    xml += '  <url>\n'
+    xml += '    <loc>https://www.chilloutfox.com/blog</loc>\n'
+    xml += '    <changefreq>daily</changefreq>\n'
+    xml += '    <priority>0.8</priority>\n'
+    xml += '  </url>\n'
+
+    # Add each blog post
+    for post in posts:
+        post_date = datetime.fromtimestamp(post['updated_at'], tz=timezone.utc).isoformat()
+        xml += '  <url>\n'
+        xml += f'    <loc>https://www.chilloutfox.com/blog/{post["slug"]}</loc>\n'
+        xml += f'    <lastmod>{post_date}</lastmod>\n'
+        xml += '    <changefreq>weekly</changefreq>\n'
+        xml += '    <priority>0.7</priority>\n'
+        xml += '  </url>\n'
+
+    xml += '</urlset>'
+
+    logger.info("[/sitemap.xml] generated with %d posts", len(posts))
+    return Response(content=xml, media_type="application/xml")
 
 
 @app.get("/health")

@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import FileUpload from './components/FileUpload';
 import Dashboard from './components/Dashboard';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorAlert from './components/ErrorAlert';
 import AuthPage from './components/AuthPage';
+import BlogList from './components/BlogList';
+import BlogPost from './components/BlogPost';
+import BlogAdmin from './components/BlogAdmin';
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
@@ -102,39 +106,55 @@ function App() {
     <div className="app">
       {error && <ErrorAlert error={error} onClose={() => setError(null)} />}
 
-      {!fileLoaded ? (
-        <div className="upload-container">
-          <div className="upload-wrapper">
-            <div className="upload-header">
-              <div className="upload-header-row">
-                <div>
-                  <h1>P&L Report Dashboard</h1>
-                  <p>Upload your trading P&L CSV file to get started</p>
-                </div>
-                <div className="user-chip">
-                  <span className="user-chip-name">
-                    {user?.name || user?.email}
-                  </span>
-                  <button className="user-chip-btn" onClick={logout}>
-                    Sign out
-                  </button>
+      <Routes>
+        {/* Blog routes (public, no auth required due to API design) */}
+        <Route path="/blog" element={<BlogList />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        <Route path="/admin/blog" element={<BlogAdmin />} />
+
+        {/* Dashboard routes */}
+        <Route
+          path="/"
+          element={
+            !fileLoaded ? (
+              <div className="upload-container">
+                <div className="upload-wrapper">
+                  <div className="upload-header">
+                    <div className="upload-header-row">
+                      <div>
+                        <h1>P&L Report Dashboard</h1>
+                        <p>Upload your trading P&L CSV file to get started</p>
+                      </div>
+                      <div className="user-chip">
+                        <span className="user-chip-name">
+                          {user?.name || user?.email}
+                        </span>
+                        <button className="user-chip-btn" onClick={logout}>
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} />
+                  {isLoading && <LoadingSpinner message="Processing your file..." />}
                 </div>
               </div>
-            </div>
-            <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} />
-            {isLoading && <LoadingSpinner message="Processing your file..." />}
-          </div>
-        </div>
-      ) : (
-        <Dashboard
-          stats={stats}
-          summary={summary}
-          onNewFile={handleNewFile}
-          isLoading={isLoading}
-          user={user}
-          onLogout={logout}
+            ) : (
+              <Dashboard
+                stats={stats}
+                summary={summary}
+                onNewFile={handleNewFile}
+                isLoading={isLoading}
+                user={user}
+                onLogout={logout}
+              />
+            )
+          }
         />
-      )}
+
+        {/* Catch-all redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }
