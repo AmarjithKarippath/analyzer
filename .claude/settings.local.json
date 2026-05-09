@@ -20,7 +20,8 @@
       "Bash(awk '{print $NF}')",
       "Bash(grep -c \"blog\" main.py)",
       "Bash(grep -i \"import.*blog\" main.py)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }
