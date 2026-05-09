@@ -14,7 +14,7 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py client.py auth.py ./
+COPY main.py client.py auth.py blog.py ./
 
 RUN mkdir -p /app/data \
     && useradd --create-home --shell /bin/bash app \
