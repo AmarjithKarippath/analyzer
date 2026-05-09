@@ -21,7 +21,9 @@
       "Bash(grep -c \"blog\" main.py)",
       "Bash(grep -i \"import.*blog\" main.py)",
       "Bash(npm run *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(git checkout *)",
+      "Bash(git push *)"
     ]
   }
 }
