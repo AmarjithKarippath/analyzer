@@ -28,15 +28,48 @@ function App() {
     axios.defaults.baseURL = API_BASE_URL;
   }, []);
 
-  // When auth state flips, reset any previous-session data
+  // When auth state flips, reset any previous-session data or load sample data
   useEffect(() => {
     if (!isAuthenticated) {
       setFileLoaded(false);
       setStats(null);
       setSummary(null);
       setError(null);
+    } else {
+      // Load sample data on successful authentication
+      loadSampleData();
     }
   }, [isAuthenticated]);
+
+  const loadSampleData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Upload sample CSV file
+      const response = await fetch('/sample_pnl_report.csv');
+      const blob = await response.blob();
+      const file = new File([blob], 'sample_pnl_report.csv', { type: 'text/csv' });
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await axios.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      await fetchStatistics();
+      setFileLoaded(true);
+    } catch (err) {
+      console.error('Failed to load sample data:', err);
+      setError({
+        title: 'Sample Data Load Failed',
+        message: 'Failed to load sample data. Please upload a file manually.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFileUpload = async (file) => {
     setIsLoading(true);
