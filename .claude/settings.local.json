@@ -32,7 +32,9 @@
       "Bash(git add *)",
       "Bash(git commit -m 'Fix backend Dockerfile to include blog.py module *)",
       "Bash(docker-compose ps *)",
-      "Bash(docker-compose up *)"
+      "Bash(docker-compose up *)",
+      "Bash(docker-compose build *)",
+      "Bash(docker-compose restart *)"
     ]
   }
 }
