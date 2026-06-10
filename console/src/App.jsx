@@ -9,6 +9,7 @@ function App() {
   const [error, setError] = useState(null)
   const [totalCount, setTotalCount] = useState(0)
   const [dailySignups, setDailySignups] = useState([])
+  const [users, setUsers] = useState([])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -16,11 +17,12 @@ function App() {
       setError(null)
       try {
         const count = await getUserCount()
-        const users = await getAllUsers()
-        const grouped = groupUsersByDate(users)
+        const allUsers = await getAllUsers()
+        const grouped = groupUsersByDate(allUsers)
 
         setTotalCount(count)
         setDailySignups(grouped)
+        setUsers(allUsers)
       } catch (err) {
         setError(
           err?.response?.data?.detail ||
@@ -66,7 +68,7 @@ function App() {
           </div>
         )}
 
-        <Dashboard totalCount={totalCount} dailySignups={dailySignups} />
+        <Dashboard totalCount={totalCount} dailySignups={dailySignups} users={users} />
       </div>
     </div>
   )

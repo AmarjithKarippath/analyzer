@@ -102,6 +102,71 @@
   padding: 32px 24px;
 }
 
+/* Sortable headers */
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.data-table th.sortable:hover {
+  background: #f3f4f6;
+}
+
+.sort-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: #2563eb;
+}
+
+/* User table styles */
+.card-users {
+  margin-top: 24px;
+}
+
+.data-table td.email {
+  font-weight: 500;
+  color: #2563eb;
+  word-break: break-word;
+}
+
+.data-table td.name {
+  color: #4b5563;
+}
+
+.data-table td.date {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-email {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-google {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .card {
