@@ -15,7 +15,7 @@ function Dashboard({ totalCount, dailySignups, users }) {
     }
   }
 
-  const sortedUsers = [...(users?.users || [])].sort((a, b) => {
+  const sortedUsers = [...(users || [])].sort((a, b) => {
     let aVal = a[sortField]
     let bVal = b[sortField]
 
